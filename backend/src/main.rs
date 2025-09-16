@@ -8,14 +8,15 @@ use rocket::{
 };
 
 mod routes;
-use routes::init;
+use routes::DatabaseFairing;
 
 mod db;
+mod models;
 
 #[launch]
 async fn rocket() -> _ {
-    init().await.expect("Failed to startup db...");
     rocket::build()
+        .attach(DatabaseFairing)
         .configure(rocket::Config {
             port: std::env::var("ROCKET_PORT")
                 .ok()
@@ -28,6 +29,28 @@ async fn rocket() -> _ {
         .mount("/", FileServer::from("./frontend/dist"))
         .mount(
             "/api",
-            routes![routes::create, routes::read, routes::update, routes::delete],
+            routes![
+                // Team routes
+                routes::create_team,
+                routes::get_team,
+                routes::get_all_teams,
+                routes::update_team,
+                routes::delete_team,
+                // Game routes
+                routes::create_game,
+                routes::get_game,
+                routes::get_all_games,
+                routes::get_games_by_week,
+                routes::update_game,
+                routes::delete_game,
+                // Betting line routes
+                routes::create_betting_line,
+                routes::get_betting_line,
+                routes::get_betting_lines_for_game,
+                // Prediction routes
+                routes::create_prediction,
+                routes::get_prediction,
+                routes::get_prediction_for_game,
+            ],
         )
 }
