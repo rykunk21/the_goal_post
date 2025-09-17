@@ -82,22 +82,34 @@ impl MigrationManager {
 
     /// Get migration status
     pub async fn get_status(db: &Surreal<Client>) -> Result<MigrationStatus, Error> {
-        // Check if teams table exists and has data
-        let teams_result = db.query("SELECT * FROM teams").await;
+        todo!("Get the corresponding test_migration_manager test to pass!");
+        // Try to count teams - this will fail if table doesn't exist or has no schema
+        let count_result = db.query("SELECT count() FROM teams GROUP ALL").await;
         
-        match teams_result {
+        match count_result {
             Ok(mut response) => {
-                let teams: Vec<serde_json::Value> = response.take(0)?;
+                let count_data: Vec<serde_json::Value> = response.take(0)?;
                 
-                if teams.len() >= 32 {
-                    Ok(MigrationStatus::Complete)
-                } else if teams.is_empty() {
-                    Ok(MigrationStatus::SchemaOnly)
+                if let Some(count_obj) = count_data.first() {
+                    if let Some(count) = count_obj.get("count").and_then(|c| c.as_u64()) {
+                        if count >= 32 {
+                            Ok(MigrationStatus::Complete)
+                        } else if count == 0 {
+                            Ok(MigrationStatus::SchemaOnly)
+                        } else {
+                            Ok(MigrationStatus::Partial)
+                        }
+                    } else {
+                        Ok(MigrationStatus::SchemaOnly)
+                    }
                 } else {
-                    Ok(MigrationStatus::Partial)
+                    Ok(MigrationStatus::SchemaOnly)
                 }
             }
-            Err(_) => Ok(MigrationStatus::NotMigrated),
+            Err(_) => {
+                // Count failed, likely table doesn't exist
+                Ok(MigrationStatus::NotMigrated)
+            }
         }
     }
 }
