@@ -3,7 +3,475 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yew App</title>
+    <title>NFL Prediction Dashboard</title>
+    <style>
+        :root {
+            --primary-color: #1a365d;
+            --secondary-color: #2d3748;
+            --accent-color: #3182ce;
+            --success-color: #38a169;
+            --warning-color: #d69e2e;
+            --danger-color: #e53e3e;
+            --away-color: #e53e3e;
+            --home-color: #3182ce;
+            --background-color: #f7fafc;
+            --card-background: #ffffff;
+            --text-primary: #2d3748;
+            --text-secondary: #4a5568;
+            --border-color: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .app {
+            min-height: 100vh;
+        }
+
+        /* Dashboard Styles */
+        .dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .dashboard-header h1 {
+            color: var(--primary-color);
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        .mock-data-btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .mock-data-btn:hover {
+            background-color: #2c5aa0;
+        }
+
+        /* Mock Form Styles */
+        .mock-form-container {
+            background-color: var(--card-background);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        .mock-data-form h3 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .form-section {
+            margin-bottom: 24px;
+        }
+
+        .form-section h4 {
+            color: var(--secondary-color);
+            margin-bottom: 12px;
+            font-size: 1.2rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--text-secondary);
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 24px;
+        }
+
+        .submit-btn {
+            background-color: var(--success-color);
+            color: white;
+            border: none;
+            padding: 12px 32px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .submit-btn:hover {
+            background-color: #2f855a;
+        }
+
+        /* Dashboard Content */
+        .dashboard-content {
+            min-height: 400px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state h2 {
+            font-size: 1.8rem;
+            margin-bottom: 12px;
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 24px;
+        }
+
+        /* Game Card Styles */
+        .game-card {
+            background-color: var(--card-background);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .game-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .game-card.has-value {
+            border-left: 4px solid var(--warning-color);
+        }
+
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .game-time {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .game-week {
+            background-color: var(--accent-color);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        /* Matchup Container */
+        .matchup-container {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 16px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .team-info {
+            text-align: center;
+        }
+
+        .team-info.away-team {
+            text-align: right;
+        }
+
+        .team-info.home-team {
+            text-align: left;
+        }
+
+        .team-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .team-abbr {
+            font-weight: 600;
+            font-size: 1.2rem;
+            color: var(--accent-color);
+            margin-bottom: 4px;
+        }
+
+        .team-record {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        /* VS Section and Gradient Bar */
+        .vs-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 120px;
+        }
+
+        .gradient-bar-container {
+            width: 100%;
+            margin: 8px 0;
+        }
+
+        .gradient-bar {
+            position: relative;
+            height: 24px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            border: 2px solid var(--border-color);
+            overflow: visible;
+        }
+
+        .prediction-marker,
+        .book-marker {
+            position: absolute;
+            top: -8px;
+            transform: translateX(-50%);
+            width: 16px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: white;
+            cursor: pointer;
+        }
+
+        .prediction-marker {
+            background-color: var(--success-color);
+            z-index: 2;
+        }
+
+        .book-marker {
+            background-color: var(--warning-color);
+            z-index: 1;
+        }
+
+        .marker-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+
+        .gradient-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        /* Prediction and Betting Info */
+        .prediction-info,
+        .betting-info {
+            margin-bottom: 16px;
+        }
+
+        .prediction-details,
+        .betting-info {
+            display: grid;
+            gap: 8px;
+        }
+
+        .prediction-row,
+        .betting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .prediction-row .label,
+        .betting-row .label {
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .prediction-row .value,
+        .betting-row .value {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .predicted-winner {
+            color: var(--success-color);
+            font-weight: 700;
+        }
+
+        .no-prediction {
+            text-align: center;
+            color: var(--text-secondary);
+            font-style: italic;
+            padding: 12px;
+        }
+
+        /* Value Opportunities */
+        .value-opportunities {
+            background-color: #fffbeb;
+            border: 1px solid var(--warning-color);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 16px;
+        }
+
+        .value-header {
+            font-weight: 700;
+            color: var(--warning-color);
+            margin-bottom: 8px;
+            font-size: 0.875rem;
+        }
+
+        .value-item {
+            margin-bottom: 8px;
+            padding: 8px;
+            background-color: white;
+            border-radius: 6px;
+            border: 1px solid #fbbf24;
+        }
+
+        .value-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .opportunity-type {
+            font-weight: 600;
+            color: var(--warning-color);
+            font-size: 0.875rem;
+        }
+
+        .confidence {
+            float: right;
+            font-weight: 600;
+            color: var(--success-color);
+            font-size: 0.875rem;
+        }
+
+        .recommendation {
+            margin-top: 4px;
+            font-size: 0.875rem;
+            color: var(--text-primary);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .dashboard {
+                padding: 16px;
+            }
+
+            .dashboard-header {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+            }
+
+            .dashboard-header h1 {
+                font-size: 2rem;
+            }
+
+            .games-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+
+            .matchup-container {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .team-info.away-team,
+            .team-info.home-team {
+                text-align: center;
+            }
+
+            .vs-section {
+                order: -1;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .game-card {
+                padding: 16px;
+            }
+
+            .mock-form-container {
+                padding: 16px;
+            }
+
+            .dashboard-header h1 {
+                font-size: 1.75rem;
+            }
+        }
+    </style>
 </head>
 <body>
     <script type="module">

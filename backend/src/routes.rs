@@ -9,7 +9,7 @@ use rocket::serde::json::Json;
 use rocket::{State, fairing::{Fairing, Info, Kind}};
 
 use crate::db::error::Error;
-use crate::models::{Game, Team, BettingLine, GamePrediction};
+use share::models::{Game, Team, BettingLine, GamePrediction};
 
 // Database manager that will be managed by Rocket
 pub struct DatabaseManager {

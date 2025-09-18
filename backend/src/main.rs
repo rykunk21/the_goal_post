@@ -11,7 +11,6 @@ mod routes;
 use routes::DatabaseFairing;
 
 mod db;
-mod models;
 
 #[launch]
 async fn rocket() -> _ {
