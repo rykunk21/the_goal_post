@@ -60,11 +60,14 @@ graph TB
 
 The system is organized into distinct modules within the Rust workspace:
 
-1. **Data Ingestion Module**: Handles NFL data retrieval and normalization
-2. **MCMC Analysis Module**: Implements statistical modeling and prediction
-3. **Betting Line Module**: Manages betting line data and comparison logic
-4. **Dashboard Module**: Provides real-time updates and visualization
-5. **Python Integration Module**: Manages EDA script execution and result integration
+1. **Shared Models Module**: Provides common data structures for frontend and backend
+2. **Data Ingestion Module**: Handles NFL data retrieval and normalization
+3. **MCMC Analysis Module**: Implements statistical modeling and prediction
+4. **Betting Line Module**: Manages betting line data and comparison logic
+5. **Dashboard Module**: Provides real-time updates and visualization
+6. **Python Integration Module**: Manages EDA script execution and result integration
+7. **Administrative Interface Module**: Handles manual game management and admin functions
+8. **Database Migration Module**: Manages schema versioning and migration execution
 
 ## Components and Interfaces
 
@@ -128,6 +131,37 @@ impl DashboardWebSocket {
 }
 ```
 
+#### Administrative Service (`backend/src/services/admin_service.rs`)
+```rust
+pub struct AdminService {
+    db: Arc<Surreal<Client>>,
+    auth_service: Arc<AuthService>,
+}
+
+impl AdminService {
+    pub async fn create_manual_game(&self, admin_id: &str, game_data: ManualGameData) -> Result<Game, AdminError>;
+    pub async fn update_manual_game(&self, admin_id: &str, game_id: &str, updates: GameUpdates) -> Result<Game, AdminError>;
+    pub async fn delete_manual_game(&self, admin_id: &str, game_id: &str) -> Result<(), AdminError>;
+    pub async fn list_manual_games(&self, admin_id: &str) -> Result<Vec<Game>, AdminError>;
+    pub async fn resolve_game_conflicts(&self, conflicts: Vec<GameConflict>) -> Result<Vec<Game>, AdminError>;
+}
+```
+
+#### Migration Service (`backend/src/services/migration_service.rs`)
+```rust
+pub struct MigrationService {
+    db: Arc<Surreal<Client>>,
+    migration_runner: surrealdb_migrations::MigrationRunner,
+}
+
+impl MigrationService {
+    pub async fn run_pending_migrations(&self) -> Result<Vec<MigrationResult>, MigrationError>;
+    pub async fn rollback_migration(&self, version: &str) -> Result<(), MigrationError>;
+    pub async fn get_migration_status(&self) -> Result<MigrationStatus, MigrationError>;
+    pub async fn validate_schema_integrity(&self) -> Result<SchemaValidation, MigrationError>;
+}
+```
+
 ### Frontend Components
 
 #### Dashboard Component (`frontend/src/components/dashboard.rs`)
@@ -159,9 +193,46 @@ pub struct GameCardProps {
 - `TrendChart`: Shows historical team performance trends
 - `ComparisonChart`: Visualizes betting line vs prediction comparisons
 
+#### Administrative Components (`frontend/src/components/admin/`)
+```rust
+#[derive(Properties, PartialEq)]
+pub struct AdminPanelProps {
+    pub user_role: UserRole,
+    pub on_game_create: Callback<ManualGameData>,
+    pub on_game_update: Callback<(String, GameUpdates)>,
+}
+
+#[function_component(AdminPanel)]
+pub fn admin_panel(props: &AdminPanelProps) -> Html {
+    // Administrative interface for manual game management
+}
+
+#[function_component(ManualGameForm)]
+pub fn manual_game_form() -> Html {
+    // Form for creating/editing manual games
+}
+```
+
+#### Mock Data Components (`frontend/src/components/mock/`)
+```rust
+#[derive(Properties, PartialEq)]
+pub struct MockDataFormProps {
+    pub on_submit: Callback<MockGameData>,
+    pub validation_errors: Vec<ValidationError>,
+}
+
+#[function_component(MockDataForm)]
+pub fn mock_data_form(props: &MockDataFormProps) -> Html {
+    // Development interface for testing with mock data
+}
+```
+
 ## Data Models
 
-### Core Game Data
+### Shared Data Models (`share/src/models/`)
+
+The shared models workspace provides consistent data structures across frontend and backend:
+
 ```rust
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Game {
@@ -172,6 +243,8 @@ pub struct Game {
     pub week: u8,
     pub season: u16,
     pub status: GameStatus,
+    pub source: GameSource, // API, Manual, Mock
+    pub created_by: Option<String>, // Admin ID for manual games
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -252,6 +325,32 @@ pub struct ValueOpportunity {
     pub confidence: f64,
     pub expected_value: f64,
     pub recommendation: String,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub enum GameSource {
+    Api,      // Retrieved from external NFL API
+    Manual,   // Created by administrator
+    Mock,     // Test data for development
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct ManualGameData {
+    pub home_team_id: String,
+    pub away_team_id: String,
+    pub game_time: DateTime<Utc>,
+    pub week: u8,
+    pub season: u16,
+    pub venue: Option<String>,
+    pub notes: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct MockGameData {
+    pub game: Game,
+    pub prediction: Option<GamePrediction>,
+    pub betting_lines: Vec<BettingLine>,
+    pub is_test_data: bool,
 }
 ```
 
