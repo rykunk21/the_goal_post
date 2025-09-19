@@ -16,14 +16,22 @@
   - Create responsive layout foundation for desktop and mobile
   - _Requirements: 4.1, 4.2, 4.5_
 
-- [ ] 3. Refactor database migrations to use surrealdb_migrations crate
-  - Replace custom migration logic in backend/src/db/migrations.rs with surrealdb_migrations
-  - Add surrealdb_migrations dependency to backend/Cargo.toml
-  - Create migration files using the crate's structured approach for schema versioning
-  - Implement migration runner that integrates with existing database initialization
-  - Update database setup to use the new migration system
-  - Write tests to verify migration functionality and rollback capabilities
-  - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5_
+- [ ] 3. Implement flexible data storage without formal migrations
+  - Create simple database initialization that creates collections as needed
+  - Implement struct-to-database serialization using SurrealDB's schemaless capabilities
+  - Add basic data validation at the struct level using serde validation
+  - Create utility functions for dynamic collection creation and data insertion
+  - Remove complex migration dependencies and focus on direct struct storage
+  - Write tests for data persistence and retrieval without schema constraints
+  - _Requirements: 1.1, 1.4, 1.5_
+
+- [ ] 3.1 Simplify database module to remove migration complexity
+  - Remove or simplify backend/src/db/migrations.rs to basic collection setup
+  - Update database connection to work without formal schema requirements
+  - Create helper functions for storing and retrieving arbitrary structs
+  - Add simple error handling for database operations without migration rollbacks
+  - Focus on getting data in and out rather than formal schema management
+  - _Requirements: 1.1, 1.4_
 
 - [ ] 4. Implement administrative game management system
   - Create AdminService with authentication and authorization
@@ -43,20 +51,22 @@
   - Write unit tests for model serialization across frontend/backend
   - _Requirements: 12.1, 12.2, 12.3, 12.4, 12.5_
 
-- [-] 6. Implement basic data service infrastructure
-  - Create DataService struct with SurrealDB connection
+- [ ] 6. Implement basic data service infrastructure
+  - Create DataService struct with SurrealDB connection using schemaless approach
   - Implement HTTP client setup for external API calls
   - Add error handling types and basic logging
   - Create database connection utilities and health checks
-  - Write unit tests for database operations
+  - Implement dynamic collection creation for storing Rust structs directly
+  - Write unit tests for database operations without formal schema requirements
   - _Requirements: 1.1, 1.4_
 
-- [ ] 7. Build NFL data retrieval module
+- [ ] 7. Build NFL data retrieval and direct storage module
   - Implement NFL API client with rate limiting
-  - Create data transformation functions from API format to internal models
+  - Create data transformation functions from API format to internal Rust structs
   - Add automatic data refresh scheduling with tokio
-  - Implement local storage of historical game data (3+ seasons)
-  - Write integration tests for data retrieval and storage
+  - Implement direct struct serialization to SurrealDB collections (games, teams, stats)
+  - Store historical game data by serializing structs directly without schema validation
+  - Write integration tests for data retrieval and struct-based storage
   - _Requirements: 1.1, 1.2, 1.3_
 
 - [ ] 8. Create MCMC statistical analysis foundation
@@ -67,20 +77,22 @@
   - Write unit tests for MCMC convergence and statistical validity
   - _Requirements: 2.1, 2.2, 2.4_
 
-- [ ] 9. Build game prediction engine
-  - Create GamePrediction model with confidence intervals
-  - Implement MCMC-based score prediction using team statistics
-  - Add historical matchup data integration for prediction accuracy
-  - Create prediction caching mechanism using Redis
-  - Write tests for prediction accuracy and performance benchmarks
+- [ ] 9. Build game prediction engine with struct-based storage
+  - Create GamePrediction struct with confidence intervals and serde serialization
+  - Implement MCMC-based score prediction using team statistics from stored structs
+  - Add historical matchup data integration by querying stored game structs
+  - Store prediction results directly as serialized structs in SurrealDB
+  - Create simple in-memory caching for frequently accessed predictions
+  - Write tests for prediction accuracy and struct-based data persistence
   - _Requirements: 2.1, 2.2, 2.5, 7.1, 7.2_
 
-- [ ] 10. Implement betting line data service
+- [ ] 10. Implement betting line data service with direct struct storage
   - Create BettingService with multiple provider support
-  - Implement betting line data models and API clients
-  - Add line comparison logic between predictions and current odds
-  - Create value opportunity identification algorithms
-  - Write unit tests for line comparison and value calculation
+  - Implement betting line structs with serde serialization for direct storage
+  - Store betting line data as serialized structs without formal schema
+  - Add line comparison logic between stored prediction and betting line structs
+  - Create value opportunity identification by comparing struct data
+  - Write unit tests for line comparison and struct-based data operations
   - _Requirements: 3.1, 3.2, 3.3, 3.5_
 
 - [ ] 11. Build real-time WebSocket infrastructure
