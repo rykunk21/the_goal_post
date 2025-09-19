@@ -43,7 +43,7 @@
   - Write unit tests for model serialization across frontend/backend
   - _Requirements: 12.1, 12.2, 12.3, 12.4, 12.5_
 
-- [ ] 6. Implement basic data service infrastructure
+- [-] 6. Implement basic data service infrastructure
   - Create DataService struct with SurrealDB connection
   - Implement HTTP client setup for external API calls
   - Add error handling types and basic logging
