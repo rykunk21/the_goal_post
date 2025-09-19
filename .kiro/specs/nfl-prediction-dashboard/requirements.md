@@ -4,6 +4,16 @@
 
 This feature implements an NFL game prediction dashboard that leverages statistical insights and Markov Chain Monte Carlo (MCMC) methods to analyze betting lines against data-driven predictions. The system will retrieve NFL game data, perform statistical analysis, and present a dashboard showing upcoming games with current betting lines alongside statistical recommendations.
 
+## Current Implementation Status
+
+The system currently has a robust foundation with:
+- Complete database schema management using surrealdb_migrations crate
+- Comprehensive migration system with schema definitions, indexes, and NFL team seed data
+- Established data models for games, teams, betting lines, and predictions
+- Working REST API endpoints for basic CRUD operations
+- Database connection management with retry logic and health checks
+- Migration tracking and rollback capabilities
+
 ## Requirements
 
 ### Requirement 1 - Functional: Data Retrieval and Storage
@@ -12,11 +22,12 @@ This feature implements an NFL game prediction dashboard that leverages statisti
 
 #### Acceptance Criteria
 
-1. WHEN the system starts THEN it SHALL retrieve current NFL schedule data and store it locally
-2. WHEN new game data becomes available THEN the system SHALL update the local database automatically
-3. WHEN historical game data is needed THEN the system SHALL provide access to at least 3 seasons of historical data
-4. IF data retrieval fails THEN the system SHALL log the error and continue with cached data
-5. WHEN storing game data THEN the system SHALL include team statistics, player performance metrics, and betting line history
+1. WHEN the system starts THEN it SHALL retrieve current NFL schedule data and store it locally using the established SurrealDB schema
+2. WHEN new game data becomes available THEN the system SHALL update the local database automatically with proper indexing for performance
+3. WHEN historical game data is needed THEN the system SHALL provide access to at least 3 seasons of historical data with efficient querying
+4. IF data retrieval fails THEN the system SHALL log the error and continue with cached data using graceful degradation
+5. WHEN storing game data THEN the system SHALL include team statistics, player performance metrics, and betting line history with proper relational integrity
+6. WHEN database initialization occurs THEN the system SHALL automatically seed NFL teams data (32 teams) with conference and division information
 
 ### Requirement 2 - Functional: MCMC Statistical Analysis
 
@@ -102,17 +113,26 @@ This feature implements an NFL game prediction dashboard that leverages statisti
 4. IF Python integration fails THEN the system SHALL continue with Rust-only analysis
 5. WHEN aggregating Python results THEN the system SHALL validate data integrity before use
 
-### Requirement 9 - Functional: Database Schema Management
+### Requirement 9 - Functional: Database Schema Management with SurrealDB Migrations
 
-**User Story:** As a developer, I want structured database migrations, so that I can manage schema changes safely across environments.
+**User Story:** As a developer, I want to use the surrealdb_migrations crate for structured database schema management, so that I can manage table definitions, events, and data changes safely across environments using industry-standard migration patterns.
+
+**Admin Story:** As an administrator, I want reliable database migration tools with rollback capabilities, so that I can safely deploy schema changes and recover from migration failures without data loss.
 
 #### Acceptance Criteria
 
-1. WHEN deploying updates THEN the system SHALL apply database migrations automatically
-2. WHEN migration fails THEN the system SHALL provide rollback capabilities
-3. WHEN schema changes are needed THEN the system SHALL version migrations sequentially
-4. IF migration conflicts occur THEN the system SHALL prevent deployment and log errors
-5. WHEN running migrations THEN the system SHALL validate schema integrity before proceeding
+1. WHEN deploying updates THEN the system SHALL apply database migrations automatically using surrealdb_migrations crate with `.surrealdb` configuration file
+2. WHEN migration fails THEN the system SHALL provide rollback capabilities using `down_to()` functionality and detailed error logging
+3. WHEN schema changes are needed THEN the system SHALL organize them in `backend/schemas/` folder with one file per table containing DEFINE TABLE and DEFINE FIELD statements
+4. WHEN data changes are needed THEN the system SHALL create timestamped migration files in `backend/migrations/` folder with descriptive names
+5. WHEN event-driven functionality is required THEN the system SHALL define SurrealDB events in `backend/events/` folder
+6. IF migration conflicts occur THEN the system SHALL prevent deployment and log errors with detailed diagnostics including migration status
+7. WHEN running migrations THEN the system SHALL validate schema integrity using comprehensive table and field checks
+8. WHEN managing database state THEN the system SHALL track applied migrations in `script_migration` table with execution timestamps and checksums
+9. WHEN rolling back THEN the system SHALL support targeted rollback to specific migration versions using migration names
+10. WHEN validating migrations THEN the system SHALL provide migration status reporting (NotMigrated, SchemaOnly, Partial, Complete) and applied migration listing
+11. WHEN initializing database THEN the system SHALL automatically run pending migrations during application startup through DatabaseFairing
+12. WHEN testing migrations THEN the system SHALL provide reset functionality for clean test environments
 
 ### Requirement 10 - Functional: Mock Data Interface
 
