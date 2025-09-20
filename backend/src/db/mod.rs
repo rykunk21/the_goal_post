@@ -2,9 +2,8 @@ use surrealdb::engine::remote::ws::{Client, Ws};
 use surrealdb::Surreal;
 
 pub mod error;
-pub mod types;
-pub mod schema;
 pub mod migrations;
+pub mod schema;
 
 /// API for docker surrealdb service (deprecated - use DatabaseManager instead)
 #[allow(dead_code)]

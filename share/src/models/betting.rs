@@ -62,6 +62,25 @@ pub struct BettingProvider {
 }
 
 impl BettingLine {
+    /// Convert point spread to implied win probability using logistic model
+    /// Each point is worth approximately 3.3% win probability in NFL
+    pub fn spread_to_probability(spread: f64) -> f64 {
+        if spread == 0.0 {
+            return 0.5;
+        }
+        // Using logistic function: P = 1 / (1 + e^(-spread/3.3))
+        1.0 / (1.0 + (-spread / 3.3).exp())
+    }
+
+    /// Get implied probability for home team winning based on spread
+    pub fn implied_probability_home_spread(&self) -> f64 {
+        Self::spread_to_probability(-self.spread) // Negative because spread is from home perspective
+    }
+
+    /// Get implied probability for away team winning based on spread  
+    pub fn implied_probability_away_spread(&self) -> f64 {
+        1.0 - self.implied_probability_home_spread()
+    }
     pub fn new(
         game_id: String,
         provider: String,
@@ -186,6 +205,49 @@ impl ValueOpportunity {
             created_at: Utc::now(),
             expires_at: None,
         }
+    }
+
+    /// Create a value opportunity from probability analysis
+    /// community_prob: Community win probability for the team (0.0 to 1.0)
+    /// betting_prob: Implied betting probability for the team (0.0 to 1.0)
+    /// team_abbr: Team abbreviation (e.g., "CAR", "ATL")
+    /// spread: The betting spread for the team (positive = underdog, negative = favorite)
+    /// is_home: Whether this is the home team
+    pub fn from_probability_analysis(
+        game_id: String,
+        betting_line_id: String,
+        community_prob: f64,
+        betting_prob: f64,
+        team_abbr: String,
+        spread: f64,
+        _is_home: bool,
+    ) -> Option<Self> {
+        let value_diff = community_prob - betting_prob;
+        
+        // Only create opportunity if there's significant value (5% threshold)
+        if value_diff.abs() < 0.05 {
+            return None;
+        }
+
+        let confidence = community_prob.max(betting_prob).min(0.95); // Cap at 95%
+        let expected_value = value_diff; // Store as decimal (will be converted to % in frontend)
+        
+        let recommendation = if spread > 0.0 {
+            format!("{} +{:.1}", team_abbr, spread)
+        } else if spread < 0.0 {
+            format!("{} {:.1}", team_abbr, spread)
+        } else {
+            format!("{} EVEN", team_abbr)
+        };
+
+        Some(Self::new(
+            game_id,
+            OpportunityType::SpreadValue,
+            confidence,
+            expected_value,
+            recommendation,
+            betting_line_id,
+        ))
     }
 
     pub fn with_expiry(mut self, expires_at: DateTime<Utc>) -> Self {

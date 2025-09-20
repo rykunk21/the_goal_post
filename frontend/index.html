@@ -161,6 +161,86 @@
             background-color: #2f855a;
         }
 
+        /* CSV Import Styles */
+        .csv-import-section {
+            background-color: #f0f9ff;
+            border: 2px dashed var(--accent-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .csv-import-section h4 {
+            color: var(--accent-color);
+            margin-bottom: 16px;
+            border: none;
+            padding: 0;
+        }
+
+        .csv-import-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .csv-import-controls input[type="file"] {
+            padding: 8px 16px;
+            border: 1px solid var(--accent-color);
+            border-radius: 6px;
+            background-color: white;
+            cursor: pointer;
+        }
+
+        .csv-import-controls .loading {
+            color: var(--accent-color);
+            font-weight: 600;
+        }
+
+        .csv-import-controls .error {
+            color: var(--danger-color);
+            font-weight: 600;
+            background-color: #fed7d7;
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: 1px solid var(--danger-color);
+        }
+
+        .csv-help {
+            margin-top: 12px;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        .divider {
+            text-align: center;
+            margin: 24px 0;
+            position: relative;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background-color: var(--border-color);
+            z-index: 1;
+        }
+
+        .divider::after {
+            content: 'OR';
+            background-color: var(--background-color);
+            padding: 0 16px;
+            position: relative;
+            z-index: 2;
+        }
+
         /* Dashboard Content */
         .dashboard-content {
             min-height: 400px;
@@ -179,18 +259,22 @@
 
         .games-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-            gap: 24px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
         }
 
         /* Game Card Styles */
         .game-card {
             background-color: var(--card-background);
-            border-radius: 12px;
-            padding: 20px;
+            border-radius: 8px;
+            padding: 16px;
             box-shadow: var(--shadow);
             border: 1px solid var(--border-color);
             transition: transform 0.2s, box-shadow 0.2s;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
         .game-card:hover {
@@ -229,9 +313,9 @@
         .matchup-container {
             display: grid;
             grid-template-columns: 1fr auto 1fr;
-            gap: 16px;
+            gap: 12px;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
         }
 
         .team-info {
@@ -246,23 +330,10 @@
             text-align: left;
         }
 
-        .team-name {
+        .team-abbr {
             font-weight: 700;
             font-size: 1.1rem;
-            color: var(--text-primary);
-            margin-bottom: 4px;
-        }
-
-        .team-abbr {
-            font-weight: 600;
-            font-size: 1.2rem;
             color: var(--accent-color);
-            margin-bottom: 4px;
-        }
-
-        .team-record {
-            font-size: 0.875rem;
-            color: var(--text-secondary);
         }
 
         /* VS Section and Gradient Bar */
@@ -270,19 +341,19 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-width: 120px;
+            min-width: 80px;
         }
 
         .gradient-bar-container {
             width: 100%;
-            margin: 8px 0;
+            margin: 4px 0;
         }
 
         .gradient-bar {
             position: relative;
-            height: 24px;
-            border-radius: 12px;
-            margin-bottom: 8px;
+            height: 20px;
+            border-radius: 10px;
+            margin-bottom: 6px;
             border: 2px solid var(--border-color);
             overflow: visible;
         }
@@ -290,15 +361,15 @@
         .prediction-marker,
         .book-marker {
             position: absolute;
-            top: -8px;
+            top: -6px;
             transform: translateX(-50%);
-            width: 16px;
-            height: 40px;
+            width: 14px;
+            height: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 8px;
-            font-size: 0.75rem;
+            border-radius: 6px;
+            font-size: 0.65rem;
             font-weight: 700;
             color: white;
             cursor: pointer;
@@ -322,7 +393,8 @@
         .gradient-labels {
             display: flex;
             justify-content: space-between;
-            font-size: 0.75rem;
+            align-items: center;
+            font-size: 0.7rem;
             font-weight: 600;
             color: var(--text-secondary);
         }
@@ -388,27 +460,42 @@
         }
 
         .value-item {
-            margin-bottom: 8px;
-            padding: 8px;
-            background-color: white;
-            border-radius: 6px;
-            border: 1px solid #fbbf24;
+            text-align: center;
         }
 
-        .value-item:last-child {
-            margin-bottom: 0;
+        .bet-recommendation {
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: var(--primary-color);
+            margin-bottom: 6px;
+            padding: 6px 8px;
+            background-color: #f0f9ff;
+            border-radius: 4px;
+            border: 1px solid var(--accent-color);
         }
 
+        .value-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .value-percentage {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--success-color);
+        }
+
+        .confidence-score {
+            font-size: 0.75rem;
+            color: var(--warning-color);
+            font-weight: 500;
+        }
+
+        /* Legacy styles for backward compatibility */
         .opportunity-type {
             font-weight: 600;
             color: var(--warning-color);
-            font-size: 0.875rem;
-        }
-
-        .confidence {
-            float: right;
-            font-weight: 600;
-            color: var(--success-color);
             font-size: 0.875rem;
         }
 
@@ -419,6 +506,18 @@
         }
 
         /* Responsive Design */
+        @media (max-width: 1200px) {
+            .games-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 900px) {
+            .games-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
         @media (max-width: 768px) {
             .dashboard {
                 padding: 16px;
@@ -439,20 +538,6 @@
                 gap: 16px;
             }
 
-            .matchup-container {
-                grid-template-columns: 1fr;
-                gap: 12px;
-            }
-
-            .team-info.away-team,
-            .team-info.home-team {
-                text-align: center;
-            }
-
-            .vs-section {
-                order: -1;
-            }
-
             .form-row {
                 grid-template-columns: 1fr;
             }
@@ -460,7 +545,7 @@
 
         @media (max-width: 480px) {
             .game-card {
-                padding: 16px;
+                padding: 12px;
             }
 
             .mock-form-container {
@@ -469,6 +554,19 @@
 
             .dashboard-header h1 {
                 font-size: 1.75rem;
+            }
+
+            .team-abbr {
+                font-size: 1rem;
+            }
+
+            .bet-recommendation {
+                font-size: 0.85rem;
+                padding: 4px 6px;
+            }
+
+            .value-percentage {
+                font-size: 0.75rem;
             }
         }
     </style>

@@ -7,7 +7,7 @@
   - Write unit tests for data model validation
   - _Requirements: 1.5, 8.5_
 
-- [x] 2. Create minimal UI with mock data interface
+- [-] 2. Create minimal UI with mock data interface
   - Build basic dashboard component structure using backend models as dependency
   - Create input forms to enter mock game data (teams, predictions, betting lines)
   - Implement game card components with gradient bars showing team matchups
@@ -15,6 +15,22 @@
   - Display team names, predicted winner, and visual gap between book/model markers
   - Create responsive layout foundation for desktop and mobile
   - _Requirements: 4.1, 4.2, 4.5_
+
+- [x] 2.1 Enhance mock data form to load CSV prediction data
+  - Modify mock data form to read from temp/nfl_predictions.csv file
+  - Parse CSV data and convert to internal game data structures
+  - Create team abbreviation to full name mapping for proper display
+  - Add bulk import functionality to load all CSV games at once
+  - Maintain existing manual entry form as fallback option
+  - _Requirements: 10.1, 10.2, 10.5_
+
+- [x] 2.2 Create HTML parser to generate proper CSV from prediction and betting tables
+  - Parse temp/predictions_table.html to extract prediction data (win percentages, +/- confidence metrics)
+  - Parse temp/betting_table.html to extract actual betting lines from multiple sportsbooks
+  - Combine prediction and betting data by matching team abbreviations and game dates
+  - Generate corrected nfl_predictions.csv with proper separation of predictions vs betting lines
+  - Convert prediction confidence metrics to actual score predictions
+  - _Requirements: 10.1, 10.2, 10.5_
 
 - [ ] 3. Implement flexible data storage without formal migrations
   - Create simple database initialization that creates collections as needed

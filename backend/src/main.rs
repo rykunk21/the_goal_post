@@ -3,7 +3,7 @@ extern crate rocket;
 use std::net::{IpAddr, Ipv4Addr};
 
 use rocket::{
-    fs::{relative, FileServer},
+    fs::FileServer,
     Config,
 };
 

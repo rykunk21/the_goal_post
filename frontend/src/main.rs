@@ -18,11 +18,21 @@ fn app() -> Html {
         })
     };
 
+    let on_bulk_game_update = {
+        let games = games.clone();
+        Callback::from(move |new_games: Vec<GameWithPredictionAndLines>| {
+            let mut updated_games = (*games).clone();
+            updated_games.extend(new_games);
+            games.set(updated_games);
+        })
+    };
+
     html! {
         <div class="app">
             <Dashboard 
                 games={(*games).clone()}
                 on_game_update={on_game_update}
+                on_bulk_game_update={on_bulk_game_update}
             />
         </div>
     }

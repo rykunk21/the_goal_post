@@ -10,6 +10,7 @@ use super::mock_data_form::MockDataForm;
 pub struct DashboardProps {
     pub games: Vec<GameWithPredictionAndLines>,
     pub on_game_update: Callback<GameWithPredictionAndLines>,
+    pub on_bulk_game_update: Callback<Vec<GameWithPredictionAndLines>>,
 }
 
 #[derive(Clone, PartialEq)]
@@ -40,6 +41,15 @@ pub fn dashboard(props: &DashboardProps) -> Html {
         })
     };
 
+    let on_bulk_mock_data_submit = {
+        let on_bulk_game_update = props.on_bulk_game_update.clone();
+        let show_mock_form = show_mock_form.clone();
+        Callback::from(move |games: Vec<GameWithPredictionAndLines>| {
+            on_bulk_game_update.emit(games);
+            show_mock_form.set(false);
+        })
+    };
+
     html! {
         <div class="dashboard">
             <header class="dashboard-header">
@@ -55,7 +65,10 @@ pub fn dashboard(props: &DashboardProps) -> Html {
             {if *show_mock_form {
                 html! {
                     <div class="mock-form-container">
-                        <MockDataForm on_submit={on_mock_data_submit} />
+                        <MockDataForm 
+                            on_submit={on_mock_data_submit}
+                            on_bulk_submit={on_bulk_mock_data_submit}
+                        />
                     </div>
                 }
             } else {

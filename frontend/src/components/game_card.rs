@@ -29,22 +29,9 @@ pub fn game_card(props: &GameCardProps) -> Html {
 
     html! {
         <div class={classes!("game-card", value_class)}>
-            <div class="game-header">
-                <div class="game-time">{game_time_str}</div>
-                <div class="game-week">{format!("Week {}", game.week)}</div>
-            </div>
-            
             <div class="matchup-container">
                 <div class="team-info away-team">
-                    <div class="team-name">{&game.away_team.name}</div>
                     <div class="team-abbr">{&game.away_team.abbreviation}</div>
-                    <div class="team-record">
-                        {format!("{}-{}-{}", 
-                            game.away_team.stats.wins, 
-                            game.away_team.stats.losses, 
-                            game.away_team.stats.ties
-                        )}
-                    </div>
                 </div>
                 
                 <div class="vs-section">
@@ -57,28 +44,28 @@ pub fn game_card(props: &GameCardProps) -> Html {
                                 var(--home-color) 100%)",
                             away_strength, home_strength
                         )}>
-                            {if let Some(prediction_pos) = prediction_marker {
+                            {if let Some(community_pos) = prediction_marker {
                                 html! {
                                     <div 
                                         class="prediction-marker" 
-                                        style={format!("left: {}%", prediction_pos)}
-                                        title="Model Prediction"
+                                        style={format!("left: {}%", community_pos)}
+                                        title="Community Prediction"
                                     >
-                                        <div class="marker-label">{"M"}</div>
+                                        <div class="marker-label">{"C"}</div>
                                     </div>
                                 }
                             } else {
                                 html! {}
                             }}
                             
-                            {if let Some(book_pos) = book_marker {
+                            {if let Some(market_pos) = book_marker {
                                 html! {
                                     <div 
                                         class="book-marker" 
-                                        style={format!("left: {}%", book_pos)}
-                                        title="Betting Line"
+                                        style={format!("left: {}%", market_pos)}
+                                        title="Market Odds"
                                     >
-                                        <div class="marker-label">{"B"}</div>
+                                        <div class="marker-label">{"M"}</div>
                                     </div>
                                 }
                             } else {
@@ -94,87 +81,35 @@ pub fn game_card(props: &GameCardProps) -> Html {
                 </div>
                 
                 <div class="team-info home-team">
-                    <div class="team-name">{&game.home_team.name}</div>
                     <div class="team-abbr">{&game.home_team.abbreviation}</div>
-                    <div class="team-record">
-                        {format!("{}-{}-{}", 
-                            game.home_team.stats.wins, 
-                            game.home_team.stats.losses, 
-                            game.home_team.stats.ties
-                        )}
-                    </div>
                 </div>
             </div>
-            
-            <div class="prediction-info">
-                {if let Some(prediction) = &game_data.prediction {
-                    html! {
-                        <div class="prediction-details">
-                            <div class="prediction-row">
-                                <span class="label">{"Predicted Winner:"}</span>
-                                <span class="value predicted-winner">
-                                    {if prediction.spread_prediction > 0.0 {
-                                        format!("{} by {:.1}", game.home_team.abbreviation, prediction.spread_prediction)
-                                    } else {
-                                        format!("{} by {:.1}", game.away_team.abbreviation, prediction.spread_prediction.abs())
-                                    }}
-                                </span>
-                            </div>
-                            <div class="prediction-row">
-                                <span class="label">{"Total Points:"}</span>
-                                <span class="value">{format!("{:.1}", prediction.total_prediction)}</span>
-                            </div>
-                            <div class="prediction-row">
-                                <span class="label">{"Confidence:"}</span>
-                                <span class="value">{format!("{:.1}%", prediction.home_win_probability() * 100.0)}</span>
-                            </div>
-                        </div>
-                    }
-                } else {
-                    html! {
-                        <div class="no-prediction">
-                            <span>{"No prediction available"}</span>
-                        </div>
-                    }
-                }}
-            </div>
-            
-            {if let Some(line) = primary_line {
-                html! {
-                    <div class="betting-info">
-                        <div class="betting-row">
-                            <span class="label">{"Spread:"}</span>
-                            <span class="value">{format!("{:+.1}", line.spread)}</span>
-                        </div>
-                        <div class="betting-row">
-                            <span class="label">{"Total:"}</span>
-                            <span class="value">{format!("{:.1}", line.total)}</span>
-                        </div>
-                        <div class="betting-row">
-                            <span class="label">{"Provider:"}</span>
-                            <span class="value">{&line.provider}</span>
-                        </div>
-                    </div>
-                }
-            } else {
-                html! {}
-            }}
             
             {if has_value {
                 html! {
                     <div class="value-opportunities">
-                        <div class="value-header">{"Value Opportunities:"}</div>
                         {for game_data.value_opportunities.iter().map(|opportunity| {
+                            let (bet_line, value_percentage) = format_betting_recommendation(
+                                opportunity, 
+                                game, 
+                                primary_line
+                            );
+                            
+                            // Calculate confidence score based on value differential
+                            let confidence_score = calculate_confidence_score(value_percentage);
+                            
                             html! {
                                 <div class="value-item">
-                                    <span class="opportunity-type">
-                                        {format!("{:?}", opportunity.opportunity_type)}
-                                    </span>
-                                    <span class="confidence">
-                                        {format!("{:.0}%", opportunity.confidence * 100.0)}
-                                    </span>
-                                    <div class="recommendation">
-                                        {&opportunity.recommendation}
+                                    <div class="bet-recommendation">
+                                        {bet_line}
+                                    </div>
+                                    <div class="value-info">
+                                        <div class="value-percentage">
+                                            {format!("{:+.1}%", value_percentage)}
+                                        </div>
+                                        <div class="confidence-score">
+                                            {format!("Confidence: {}", confidence_score)}
+                                        </div>
                                     </div>
                                 </div>
                             }
@@ -188,39 +123,131 @@ pub fn game_card(props: &GameCardProps) -> Html {
     }
 }
 
+fn format_betting_recommendation(
+    opportunity: &ValueOpportunity, 
+    game: &Game, 
+    primary_line: Option<&BettingLine>
+) -> (String, f64) {
+    // Extract value percentage from expected_value (assuming it's stored as a decimal)
+    let value_percentage = opportunity.expected_value * 100.0;
+    
+    // Parse the recommendation to extract team and spread
+    // Expected format: "CAR +5.5" or "ATL -3.5" etc.
+    if let Some(line) = primary_line {
+        match opportunity.opportunity_type {
+            OpportunityType::SpreadValue => {
+                // For spread value, format as "TEAM +/-X.X"
+                let bet_line = if opportunity.recommendation.contains(&game.home_team.abbreviation) {
+                    // Home team value
+                    if line.spread > 0.0 {
+                        format!("{} +{:.1}", game.home_team.abbreviation, line.spread)
+                    } else if line.spread < 0.0 {
+                        format!("{} {:.1}", game.home_team.abbreviation, line.spread)
+                    } else {
+                        format!("{} EVEN", game.home_team.abbreviation)
+                    }
+                } else {
+                    // Away team value (opposite of home spread)
+                    let away_spread = -line.spread;
+                    if away_spread > 0.0 {
+                        format!("{} +{:.1}", game.away_team.abbreviation, away_spread)
+                    } else if away_spread < 0.0 {
+                        format!("{} {:.1}", game.away_team.abbreviation, away_spread)
+                    } else {
+                        format!("{} EVEN", game.away_team.abbreviation)
+                    }
+                };
+                (bet_line, value_percentage)
+            },
+            OpportunityType::TotalValue => {
+                // For total value, format as "OVER/UNDER X.X"
+                if opportunity.recommendation.to_lowercase().contains("over") {
+                    (format!("OVER {:.1}", line.total), value_percentage)
+                } else {
+                    (format!("UNDER {:.1}", line.total), value_percentage)
+                }
+            },
+            _ => {
+                // Fallback to original recommendation
+                (opportunity.recommendation.clone(), value_percentage)
+            }
+        }
+    } else {
+        // No betting line available, use original recommendation
+        (opportunity.recommendation.clone(), value_percentage)
+    }
+}
+
 fn calculate_matchup_visualization(game_data: &GameWithPredictionAndLines) -> (f64, f64, Option<f64>, Option<f64>) {
-    let game = &game_data.game;
+    // Calculate probability-based visualization
+    // This should reflect the community vs market probability differential
     
-    // Base team strength calculation (simplified)
-    let home_rating = game.home_team.stats.offensive_rating + game.home_team.stats.defensive_rating;
-    let away_rating = game.away_team.stats.offensive_rating + game.away_team.stats.defensive_rating;
-    
-    // Normalize to 0-100 scale for gradient
-    let total_rating = home_rating + away_rating;
-    let away_strength = if total_rating > 0.0 {
-        (away_rating / total_rating * 100.0).max(10.0).min(90.0)
+    if let Some(line) = game_data.betting_lines.first() {
+        // Convert spread to implied probabilities using logistic model
+        let market_home_prob = spread_to_probability(-line.spread) * 100.0; // Convert to percentage
+        let market_away_prob = 100.0 - market_home_prob;
+        
+        // For community probabilities, we'll derive them from the value opportunities
+        // If there's a value opportunity, it means community differs from market
+        let (community_home_prob, community_away_prob) = if let Some(value_opp) = game_data.value_opportunities.first() {
+            // Extract the probability differential from the expected value
+            let value_diff = value_opp.expected_value * 100.0; // Convert to percentage
+            
+            if value_opp.recommendation.contains(&game_data.game.home_team.abbreviation) {
+                // Value is on home team, so community thinks home team has higher probability
+                let community_home = (market_home_prob + value_diff.abs()).min(95.0).max(5.0);
+                (community_home, 100.0 - community_home)
+            } else {
+                // Value is on away team, so community thinks away team has higher probability  
+                let community_away = (market_away_prob + value_diff.abs()).min(95.0).max(5.0);
+                (100.0 - community_away, community_away)
+            }
+        } else {
+            // No value opportunity, so community and market agree
+            (market_home_prob, market_away_prob)
+        };
+        
+        // Use community probabilities for the gradient (this shows what the community thinks)
+        let home_strength = community_home_prob;
+        let away_strength = community_away_prob;
+        
+        // Market position (where the betting line thinks the game should be)
+        let market_position = market_home_prob;
+        
+        // Community position (where the community thinks the game should be)  
+        let community_position = community_home_prob;
+        
+        (home_strength, away_strength, Some(community_position), Some(market_position))
     } else {
-        50.0
-    };
-    let home_strength = 100.0 - away_strength;
+        // No betting line available, use neutral
+        (50.0, 50.0, None, None)
+    }
+}
+
+// Helper function to convert spread to probability (same as in our Python analysis)
+fn spread_to_probability(spread: f64) -> f64 {
+    if spread == 0.0 {
+        return 0.5;
+    }
+    // Using logistic function: P = 1 / (1 + e^(-spread/3.3))
+    1.0 / (1.0 + (-spread / 3.3).exp())
+}
+
+// Calculate confidence score based on value differential
+fn calculate_confidence_score(value_percentage: f64) -> String {
+    let abs_value = value_percentage.abs();
     
-    // Calculate marker positions based on predictions and betting lines
-    let prediction_marker = if let Some(prediction) = &game_data.prediction {
-        // Convert spread to position on 0-100 scale
-        // Negative spread means home team favored, positive means away team favored
-        let spread_position = 50.0 - (prediction.spread_prediction * 2.0); // Scale factor of 2
-        Some(spread_position.max(5.0).min(95.0))
+    if abs_value >= 15.0 {
+        "★★★★★".to_string() // 5 stars for 15%+ value
+    } else if abs_value >= 12.0 {
+        "★★★★☆".to_string() // 4 stars for 12-15% value
+    } else if abs_value >= 9.0 {
+        "★★★☆☆".to_string() // 3 stars for 9-12% value
+    } else if abs_value >= 6.0 {
+        "★★☆☆☆".to_string() // 2 stars for 6-9% value
+    } else if abs_value >= 3.0 {
+        "★☆☆☆☆".to_string() // 1 star for 3-6% value
     } else {
-        None
-    };
-    
-    let book_marker = if let Some(line) = game_data.betting_lines.first() {
-        // Convert betting line spread to position
-        let line_position = 50.0 - (line.spread * 2.0); // Scale factor of 2
-        Some(line_position.max(5.0).min(95.0))
-    } else {
-        None
-    };
-    
-    (home_strength, away_strength, prediction_marker, book_marker)
+        "☆☆☆☆☆".to_string() // No stars for <3% value
+    }
 }
