@@ -42,55 +42,46 @@ def analyze_probability_value():
             market_spread_str = row['Market Spread (Home)'].replace('+', '')
             market_spread = float(market_spread_str)
             
+            # Parse home moneyline odds
+            home_moneyline = int(row.get('Home Moneyline', -110))
+            
+            # Parse community probability
+            community_prob_str = row.get('Community Probability', '50.0%')
+            community_percentage = float(community_prob_str.replace('%', ''))
+            
             games.append({
                 'away_team': row['Away Team'],
                 'home_team': row['Home Team'],
                 'predicted_away': float(row['Predicted Away Score']),
                 'predicted_home': float(row['Predicted Home Score']),
                 'market_spread': market_spread,
-                'confidence': float(row['Confidence'])
+                'home_moneyline': home_moneyline,
+                'confidence': float(row['Confidence']),
+                'community_percentage': community_percentage
             })
     
     print("PROBABILITY-BASED VALUE ANALYSIS")
     print("=" * 50)
     
-    # We need to get the community probabilities from the HTML
-    # For now, let's use some example probabilities based on the market data we saw
-    community_probs = {
-        'ATL_CAR': 0.67,  # market="33" means 33% for CAR, so 67% for ATL
-        'GB_CLE': 0.81,   # market="19" means 19% for CLE, so 81% for GB
-        'HOU_JAX': 0.47,  # market="53" means 53% for JAX, so 47% for HOU
-        'CIN_MIN': 0.40,  # market="60" means 60% for MIN, so 40% for CIN
-        'PIT_NE': 0.55,   # market="45" means 45% for NE, so 55% for PIT
-        'LA_PHI': 0.37,   # market="63" means 63% for PHI, so 37% for LA
-        'NYJ_TB': 0.25,   # market="75" means 75% for TB, so 25% for NYJ
-        'IND_TEN': 0.65,  # market="35" means 35% for TEN, so 65% for IND
-        'LV_WAS': 0.41,   # market="59" means 59% for WAS, so 41% for LV
-        'DEN_LAC': 0.41,  # market="59" means 59% for LAC, so 41% for DEN
-        'NO_SEA': 0.22,   # market="78" means 78% for SEA, so 22% for NO
-        'DAL_CHI': 0.52,  # market="48" means 48% for CHI, so 52% for DAL
-        'ARI_SF': 0.45,   # market="55" means 55% for SF, so 45% for ARI
-        'KC_NYG': 0.74,   # market="26" means 26% for NYG, so 74% for KC
-        'DET_BAL': 0.32,  # market="68" means 68% for BAL, so 32% for DET
-    }
+    # Community probabilities are now read from the CSV data
     
     value_opportunities = []
     
     for game in games:
-        game_key = f"{game['away_team']}_{game['home_team']}"
+        # The community percentage from the HTML represents the home team win probability
+        community_home_prob = game['community_percentage'] / 100.0
+        community_away_prob = 1.0 - community_home_prob
         
-        # Get community probability for away team winning
-        community_away_prob = community_probs.get(game_key, 0.5)
-        community_home_prob = 1.0 - community_away_prob
-        
-        # Calculate implied probability from betting spread
-        # Positive spread means home team is underdog
-        if game['market_spread'] > 0:
-            # Home team is underdog, away team favored
-            betting_home_prob = spread_to_probability(-game['market_spread'])
+        # Calculate implied WIN probability from point spread (CORRECT approach)
+        # This converts the spread to "probability of winning the game"
+        # which matches what the community percentage represents
+        market_spread = game['market_spread']
+        if market_spread > 0:
+            # Home team is underdog
+            betting_home_prob = spread_to_probability(-market_spread)
         else:
-            # Home team is favored
-            betting_home_prob = spread_to_probability(-game['market_spread'])
+            # Home team is favorite  
+            betting_home_prob = spread_to_probability(-market_spread)
         
         betting_away_prob = 1.0 - betting_home_prob
         
@@ -98,18 +89,22 @@ def analyze_probability_value():
         away_value = community_away_prob - betting_away_prob
         home_value = community_home_prob - betting_home_prob
         
-        # Significant value threshold (5% probability difference)
-        if abs(away_value) >= 0.05 or abs(home_value) >= 0.05:
-            if abs(away_value) > abs(home_value):
-                # Value on away team
+        # Significant POSITIVE value threshold (5% probability difference)
+        # Only show opportunities where community > betting (positive value)
+        if away_value >= 0.05 or home_value >= 0.05:
+            if away_value >= 0.05:
+                # Positive value on away team
                 value_team = game['away_team']
                 value_amount = away_value
                 team_type = "AWAY"
-            else:
-                # Value on home team
+            elif home_value >= 0.05:
+                # Positive value on home team
                 value_team = game['home_team']
                 value_amount = home_value
                 team_type = "HOME"
+            else:
+                # This shouldn't happen given our filter above, but just in case
+                continue
             
             # Determine if this team is favorite or underdog based on spread
             if game['market_spread'] > 0:
@@ -158,8 +153,8 @@ def analyze_probability_value():
                 'spread': game['market_spread']
             })
     
-    # Sort by value amount (highest first)
-    value_opportunities.sort(key=lambda x: abs(x['value_amount']), reverse=True)
+    # Sort by value amount (highest positive value first)
+    value_opportunities.sort(key=lambda x: x['value_amount'], reverse=True)
     
     print(f"Found {len(value_opportunities)} value opportunities (>=5% probability difference):\n")
     

@@ -17,8 +17,8 @@ pub fn game_card(props: &GameCardProps) -> Html {
     // Calculate gradient position based on prediction and betting lines
     let (home_strength, away_strength, prediction_marker, book_marker) = calculate_matchup_visualization(game_data);
     
-    // Format game time
-    let game_time_str = game.game_time.format("%m/%d %I:%M %p").to_string();
+    // Format game time (unused in simplified UI)
+    let _game_time_str = game.game_time.format("%m/%d %I:%M %p").to_string();
     
     // Get primary betting line (first one if available)
     let primary_line = game_data.betting_lines.first();

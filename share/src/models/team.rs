@@ -1,13 +1,16 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use validator::Validate;
 
 use super::game::{GameResult, GameOutcome};
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Validate)]
 pub struct Team {
     pub id: String,
+    #[validate(length(min = 1, max = 50, message = "Team name must be between 1 and 50 characters"))]
     pub name: String,
+    #[validate(length(min = 2, max = 5, message = "Team abbreviation must be between 2 and 5 characters"))]
     pub abbreviation: String,
     pub conference: Option<String>,
     pub division: Option<String>,
@@ -117,6 +120,12 @@ impl Team {
             .iter()
             .filter(|injury| !matches!(injury.status, InjuryStatus::Healthy))
             .collect()
+    }
+
+    /// Validate team data and return validated team or validation errors
+    pub fn validate_and_create(self) -> Result<Self, validator::ValidationErrors> {
+        self.validate()?;
+        Ok(self)
     }
 }
 

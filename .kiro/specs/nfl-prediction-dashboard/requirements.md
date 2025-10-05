@@ -170,3 +170,34 @@ The system currently has a robust foundation with:
 3. WHEN compiling for WASM THEN the system SHALL properly handle platform-specific dependencies
 4. IF model serialization fails THEN the system SHALL provide clear error messages
 5. WHEN sharing models THEN the system SHALL include proper feature flags for different compilation targets
+
+### Requirement 13 - Architecture: No Temporary File Dependencies
+
+**User Story:** As a developer, I want the system to avoid dependencies on temporary files and directories, so that the application is self-contained and production-ready without external file dependencies.
+
+**Admin Story:** As an administrator, I want to deploy the system without managing temporary files, so that deployment is clean and doesn't require file system setup beyond the application itself.
+
+#### Acceptance Criteria
+
+1. WHEN processing data THEN the system SHALL NOT depend on files in temp/ directories for core functionality
+2. WHEN integrating external data sources THEN the system SHALL use proper service interfaces rather than file-based communication
+3. WHEN performing data analysis THEN the system SHALL implement analysis logic within proper service modules rather than external scripts
+4. IF temporary processing is needed THEN the system SHALL use in-memory processing or proper database storage
+5. WHEN deploying THEN the system SHALL be self-contained without requiring external file dependencies
+6. WHEN refactoring existing temp/ dependencies THEN the system SHALL migrate functionality to proper service modules with clear interfaces
+
+#### Current Violations (To Be Addressed)
+
+**VIOLATION 1: Tasks 2.1 and 2.2** - Currently depend on temp/nfl_predictions.csv, temp/predictions_table.html, and temp/betting_table.html for data loading and parsing
+
+**VIOLATION 2: Frontend Mock Data Form** - References temp/nfl_predictions.csv file for bulk data import
+
+**VIOLATION 3: Python Scripts** - Multiple Python scripts in temp/ directory (probability_analysis.py, analyze_value.py, parse_html_to_csv.py) that should be refactored into proper data collection services
+
+**VIOLATION 4: Dashboard Hard-coded Data** - Dashboard component contains hard-coded data that appears to come from temp/ directory analysis scripts rather than proper service interfaces
+
+**Refactoring Required:**
+- Move Python analysis logic into backend data collection service
+- Replace file-based data exchange with proper API endpoints
+- Implement proper data ingestion pipeline without temp file dependencies
+- Create service interfaces for prediction analysis and betting line collection

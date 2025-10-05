@@ -77,6 +77,24 @@ def parse_predictions_table(html_file):
             if market_input and market_input.get('market'):
                 market_percentage = int(market_input.get('market'))
             
+            # Extract community probability from the rightmost column (red background)
+            community_percentage = 50  # Default
+            # Look for spans in cells with red background that contain percentage text
+            red_cells = row.find_all('td', bgcolor=re.compile(r'#\d+0000'))  # Match red background colors
+            for cell in red_cells:
+                span = cell.find('span')
+                if span:
+                    span_text = span.get_text().strip()
+                    if '%' in span_text:
+                        try:
+                            # Extract percentage value
+                            percentage_match = re.search(r'(\d+)%', span_text)
+                            if percentage_match:
+                                community_percentage = int(percentage_match.group(1))
+                                break
+                        except ValueError:
+                            continue
+            
             # Convert market probabilities to predicted scores
             # market_percentage = home team win probability
             home_win_prob = market_percentage / 100.0
@@ -113,7 +131,8 @@ def parse_predictions_table(html_file):
                 'confidence': round(confidence, 2),
                 'away_confidence': away_confidence,
                 'home_confidence': home_confidence,
-                'market_percentage': market_percentage
+                'market_percentage': market_percentage,
+                'community_percentage': community_percentage
             })
             
         except Exception as e:
@@ -185,9 +204,12 @@ def parse_betting_table(html_file):
                     
                     # Find the spread value in the home team div
                     spread_span = home_odds_div.find('span', class_='css-1jlt5rt')
+                    # Find the moneyline odds in the secondary span
+                    moneyline_span = home_odds_div.find('span', class_='book-cell__secondary')
                     
                     if spread_span:
                         spread_text = spread_span.get_text().strip()
+                        moneyline_text = moneyline_span.get_text().strip() if moneyline_span else "-110"
                         
                         try:
                             # Parse the spread value
@@ -198,19 +220,23 @@ def parse_betting_table(html_file):
                             else:
                                 home_spread = float(spread_text)
                             
+                            # Parse the moneyline odds
+                            home_moneyline = int(moneyline_text)
+                            
                             game_key = f"{away_abbr}_{home_abbr}"
                             betting_lines[game_key] = {
                                 'away_team': away_abbr,
                                 'home_team': home_abbr,
                                 'market_spread': home_spread,
                                 'home_spread': home_spread,
+                                'home_moneyline': home_moneyline,
                                 'total': 45.0
                             }
                             
-                            print(f"Found betting line: {away_abbr} @ {home_abbr}, home spread: {home_spread}")
+                            print(f"Found betting line: {away_abbr} @ {home_abbr}, home spread: {home_spread}, moneyline: {home_moneyline}")
                             
                         except ValueError:
-                            print(f"Could not parse spread value: {spread_text}")
+                            print(f"Could not parse spread value: {spread_text} or moneyline: {moneyline_text}")
                             continue
                     
         except Exception as e:
@@ -226,7 +252,7 @@ def combine_data_and_generate_csv(predictions, betting_lines, output_file):
         fieldnames = [
             'Week', 'Date', 'Time', 'Away Team', 'Home Team',
             'Predicted Away Score', 'Predicted Home Score', 'Confidence',
-            'Market Spread (Home)', 'Total'
+            'Market Spread (Home)', 'Home Moneyline', 'Total', 'Community Probability'
         ]
         
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -241,9 +267,10 @@ def combine_data_and_generate_csv(predictions, betting_lines, output_file):
             if not betting_data:
                 print(f"WARNING: No betting line found for {game_key}")
             
-            # Get the home team spread directly from betting data
+            # Get the home team spread and moneyline directly from betting data
             # This is already in the correct format (home team perspective)
             home_spread = betting_data.get('home_spread', 0.0)
+            home_moneyline = betting_data.get('home_moneyline', -110)
             total = betting_data.get('total', 45.0)
             
             # Format the spread properly
@@ -266,7 +293,9 @@ def combine_data_and_generate_csv(predictions, betting_lines, output_file):
                 'Predicted Home Score': game['predicted_home_score'],
                 'Confidence': game['confidence'],
                 'Market Spread (Home)': spread_display,
-                'Total': total
+                'Home Moneyline': home_moneyline,
+                'Total': total,
+                'Community Probability': f"{game['community_percentage']}.0%"
             })
 
 def main():

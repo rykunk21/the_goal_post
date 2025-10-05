@@ -13,12 +13,25 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     pkg-config \
     musl-tools \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Add MUSL target
-RUN rustup target add x86_64-unknown-linux-musl
+# Install Node.js and npm (needed for Trunk)
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs
+
+# Add MUSL target and wasm32 target for frontend
+RUN rustup target add x86_64-unknown-linux-musl wasm32-unknown-unknown
+
+# Install Trunk for building the frontend
+RUN cargo install trunk
+
+# Build frontend first
+WORKDIR /app/frontend
+RUN trunk build --release
 
 # Build backend for MUSL
+WORKDIR /app
 RUN cargo build --release --target x86_64-unknown-linux-musl -p backend
 
 # ===== Runtime stage =====
